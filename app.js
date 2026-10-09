@@ -249,8 +249,7 @@
     var keptChars = Object.keys(result.kept).sort().slice(0, 12);
     if (keptChars.length) {
       notes.push('Kept as-is (' + result.keptCount + '): ' + keptChars.join(' ') +
-        (Object.keys(result.kept).length > 12 ? ' …' : '') +
-        ' — anything with no rule passes through unchanged.');
+        (Object.keys(result.kept).length > 12 ? ' …' : ''));
     }
 
     el.notes.textContent = '';
