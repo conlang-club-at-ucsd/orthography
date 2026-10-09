@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orthography Converter - Conlang Club @ UCSD</title>
+<meta name="description" content="Convert between your conlang's spelling and IPA with a mapping you define. Ships with a Tlag preset, has an IPA picker, and every setting is saved in the link.">
+<link rel="icon" href="/assets/logo.png" type="image/png">
+<link rel="stylesheet" href="/styles.css">
+<link rel="canonical" href="https://orthography.conlangatucsd.com/">
+<meta property="og:title" content="Orthography Converter | Conlang Club @ UCSD">
+<meta property="og:description" content="Convert between your conlang's spelling and IPA with a mapping you define. Ships with a Tlag preset. Shareable by link.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://orthography.conlangatucsd.com/assets/logo.png">
+<meta property="og:url" content="https://orthography.conlangatucsd.com/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Orthography Converter | Conlang Club @ UCSD">
+<meta name="twitter:description" content="Convert between your conlang's spelling and IPA. Ships with a Tlag preset. Shareable by link.">
+<meta name="twitter:image" content="https://orthography.conlangatucsd.com/assets/logo.png">
+
+<!-- I'm keeping style.css consistent between pages
+  so these are things that weren't in the original -->
+<style>
+  button.btn{ cursor: pointer; }
+  .btn[disabled]{ opacity: 0.5; cursor: not-allowed; }
+
+  .gen-layout{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 36px;
+    align-items: start;
+  }
+  .gen-out{ position: sticky; top: 104px; }
+  @media (max-width: 860px){
+    .gen-layout{ grid-template-columns: 1fr; }
+    .gen-out{ position: static; }
+  }
+
+  .preset-row{ display: flex; flex-wrap: wrap; gap: 14px; margin: 6px 0 26px; }
+
+  .field{ margin-bottom: 20px; }
+  .field > label, .field > .label{
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+  }
+  .field .hint{
+    font-size: 0.85rem;
+    color: #5a3a58;
+    margin: 5px 0 0;
+    max-width: none;
+    line-height: 1.45;
+  }
+  .gen-input{
+    width: 100%;
+    font: inherit;
+    font-size: 0.95rem;
+    color: var(--ink);
+    background: var(--cream);
+    border: var(--line) solid var(--ink);
+    border-radius: 8px;
+    padding: 0.55em 0.7em;
+  }
+  textarea.gen-input, .gen-input--code{
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    resize: vertical;
+  }
+  textarea.gen-input--prose{
+    font-family: var(--font-body);
+    font-size: 1.05rem;
+    line-height: 1.55;
+  }
+
+  .checks{ display: flex; flex-wrap: wrap; gap: 10px 22px; margin-bottom: 4px; }
+  .check{ display: inline-flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; }
+  .check input{ width: 20px; height: 20px; accent-color: var(--purple); cursor: pointer; }
+
+  .out-head{
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    margin-bottom: 14px;
+  }
+  .out-head h2{ font-size: 1.5rem; margin: 0; }
+  .out-meta{ font-size: 0.88rem; font-style: italic; color: var(--purple-deep); margin: 0; max-width: none; }
+  .out-actions{ display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 20px; }
+
+  .conv-actions{ display: flex; flex-wrap: wrap; gap: 14px; margin: 0 0 20px; }
+
+  .picker{ margin-top: 26px; border-top: 2px dashed rgba(23,17,15,0.35); padding-top: 18px; }
+  .picker h3{ font-size: 1.05rem; margin: 0 0 4px; }
+  .picker p.picker-sub{ font-size: 0.85rem; color: #5a3a58; margin: 0 0 12px; max-width: none; }
+  .picker-group{ margin-bottom: 12px; }
+  .picker-group > span{
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--purple-deep);
+    margin-bottom: 6px;
+  }
+  .picker-keys{ display: flex; flex-wrap: wrap; gap: 6px; }
+  .key{
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+    font-size: 1rem;
+    line-height: 1.2;
+    min-width: 2.1em;
+    padding: 4px 8px;
+    color: var(--ink);
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .key:hover{ background: var(--gold); }
+  .key:active{ transform: translateY(1px); }
+
+  .gen-notes{ margin: 16px 0 0; }
+  .gen-notes[hidden]{ display: none; }
+  .gen-notes div + div{ margin-top: 6px; }
+  .gen-notes{
+    font-size: 0.88rem;
+    background: var(--cream);
+    border: 2px dashed var(--ink);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .gen-status{ min-height: 1.6em; margin: 12px 0 0; font-size: 0.9rem; font-weight: 600; color: var(--purple-deep); max-width: none; }
+
+  .gen-help{ border-top: var(--line-thick) solid var(--ink); }
+  .gen-help .faq-list{ max-width: 820px; }
+  .faq-answer code{
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+    font-size: 0.88em;
+    background: var(--cream);
+    border: 1px solid rgba(23,17,15,0.35);
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+  .faq-answer ul{ margin: 0.6em 0 0; padding-left: 1.2em; }
+  .faq-answer li{ margin-bottom: 0.35em; }
+  .faq-answer pre{
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    background: var(--cream);
+    border: 1px solid rgba(23,17,15,0.35);
+    border-radius: 6px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    white-space: pre;
+  }
+</style>
+</head>
+<body>
+
+<div data-include="header">
+<header class="site-header">
+  <nav class="nav">
+    <a class="brand" href="https://conlangatucsd.com/">
+      <img src="/assets/logo.png" alt="Conlang Club at UCSD logo" width="46" height="46" decoding="async">
+      <span class="brand-text">Conlang Club<span>@ UC San Diego</span></span>
+    </a>
+    <ul class="nav-links nav-links--static">
+      <li><a href="https://conlangatucsd.com/">Home</a></li>
+      <li><a href="https://conlangatucsd.com/tlag/">Tlag</a></li>
+      <li><a href="https://conlangatucsd.com/about/">About Us</a></li>
+      <li><a href="https://conlangatucsd.com/officers/">Officers</a></li>
+      <li><a href="https://conlangatucsd.com/projects/">Member Projects</a></li>
+      <li><a href="https://conlangatucsd.com/tools/">Tools</a></li>
+      <li><a href="https://conlangatucsd.com/faq/">FAQ</a></li>
+      <li><a href="https://discord.gg/PdkpT26AHG">Join Discord</a></li>
+    </ul>
+  </nav>
+</header>
+</div>
+
+<main>
+
+  <section class="page-banner">
+    <div class="wrap">
+      <h1>Orthography converter</h1>
+      <p>Define how your spelling maps to IPA, then convert either way. Type in either box and the other updates. Every setting is stored in the page link, so you can bookmark a converter or send it to a friend.</p>
+    </div>
+  </section>
+
+  <section class="section-cream">
+    <div class="wrap">
+
+      <span class="eyebrow-tag">Start from a preset</span>
+      <div class="preset-row" id="presets" role="group" aria-label="Presets"></div>
+
+      <div class="gen-layout">
+
+        <form class="card" id="conv-form" autocomplete="off" onsubmit="return false;">
+          <h2 style="font-size:1.5rem;">Mapping</h2>
+
+          <div class="field">
+            <label for="mapping">Spelling = IPA, one per line</label>
+            <textarea class="gen-input" id="mapping" rows="14" spellcheck="false"></textarea>
+            <p class="hint">Write <code>sh = ʃ</code>. List longer spellings first for readability; matching is always longest-first. Separate variants with <code>/</code>: <code>tl = ʈɭ˔ / tɬ</code> writes the first one, but reads all of them. Lines starting with <code>//</code> are notes.</p>
+          </div>
+
+          <div class="field">
+            <span class="label">Options</span>
+            <div class="checks">
+              <label class="check"><input type="checkbox" id="foldcase" checked> Ignore case when matching</label>
+            </div>
+            <p class="hint">When checked, <code>Aabaakaatl</code> still matches <code>aa</code>. Uncheck if capitals mean different sounds in your orthography.</p>
+          </div>
+        </form>
+
+        <div class="card gen-out" id="output-card">
+          <div class="out-head">
+            <h2>Convert</h2>
+            <p class="out-meta" id="meta"></p>
+          </div>
+
+          <div class="field">
+            <label for="ortho">Spelling</label>
+            <textarea class="gen-input gen-input--prose" id="ortho" rows="5" spellcheck="false"></textarea>
+          </div>
+
+          <div class="conv-actions">
+            <button type="button" class="btn btn--small" id="swap">Swap boxes</button>
+            <button type="button" class="btn btn--small" id="copy-ortho">Copy spelling</button>
+            <button type="button" class="btn btn--small" id="copy-ipa">Copy IPA</button>
+            <button type="button" class="btn btn--small" id="copy-link">Copy link</button>
+          </div>
+
+          <div class="field">
+            <label for="ipa">IPA</label>
+            <textarea class="gen-input gen-input--prose" id="ipa" rows="5" spellcheck="false"></textarea>
+          </div>
+
+          <div class="picker" id="picker">
+            <h3>IPA picker</h3>
+            <p class="picker-sub" id="picker-target">Tapping a symbol types it into the IPA box. Click into a box first to redirect the picker there.</p>
+            <div id="picker-groups"></div>
+          </div>
+
+          <div class="sample-script gen-notes" id="notes" hidden></div>
+          <p class="gen-status" id="status" role="status" aria-live="polite"></p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="section-paper gen-help">
+    <div class="wrap">
+      <span class="eyebrow-tag">How it works</span>
+      <h2>Mapping guide</h2>
+      <div class="faq-list" style="margin-top:30px;">
+
+        <details class="faq-item">
+          <summary>Writing a mapping</summary>
+          <div class="faq-answer">
+            <p>One rule per line, spelling on the left and IPA on the right:</p>
+<pre>// Tlag vowels
+aa = ɑ
+a = æ</pre>
+            <ul>
+              <li><code>=</code> or <code>:</code> separates the two sides. Surrounding spaces are ignored.</li>
+              <li>Both sides can be more than one character: <code>ts = tsʼ</code>, <code>tl = ʈɭ˔</code>.</li>
+              <li>Matching is greedy and longest-first, so <code>aa</code> wins over <code>a</code> without you ordering anything. Brackets, dots and stress marks with no rule pass through unchanged.</li>
+              <li><code>// comment</code>: lines starting with two slashes are ignored.</li>
+            </ul>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary>Variants and the reverse direction</summary>
+          <div class="faq-answer">
+            <p>Separate accepted variants with <code>/</code>:</p>
+<pre>tl = ʈɭ˔ / tɬ</pre>
+            <ul>
+              <li>Spelling to IPA always writes the <em>first</em> variant (<code>tl</code> becomes <code>ʈɭ˔</code>).</li>
+              <li>IPA to spelling accepts <em>any</em> variant, so both <code>ʈɭ˔</code> and <code>tɬ</code> become <code>tl</code>.</li>
+              <li>Use this for tie bars and free variation: <code>b = b̪͡v / b̪v</code> reads both, writes the tied one.</li>
+              <li>If two spellings claim the same IPA, the longest spelling wins going backwards, and the page warns you.</li>
+            </ul>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary>The Tlag preset</summary>
+          <div class="faq-answer">
+            <p>The Tlag preset covers the full inventory from the <a href="https://conlangatucsd.com/tlag/phonology/">Tlag phonology</a>: <code>g</code> is /ŋ/, <code>v</code> is /ə/, <code>aa</code> is /ɑ/, ejectives <code>p t k ts</code> carry /ʼ/, and the dictionary's narrow transcriptions are accepted on the way back — tie bars (<code>b̪͡v p̪͡f ʈ͡ɭ˔ t͡s</code>), plain neighbours (<code>s</code> in <code>[sʈ]</code>), and nasalised vowels (<code>ə̃ ɑ̃</code>).</p>
+            <p>Try it: type <code>aabaakaatl</code> in the spelling box and you should get something close to the dictionary's <code>[ɑb̪͡vɑkʼɑʈ͡ɭ˔]</code> (dots and brackets are yours to add).</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary>Sharing and deep links</summary>
+          <div class="faq-answer">
+            <p>Every change updates the address bar. Copy the link and anyone who opens it sees your exact mapping, both texts, and options.</p>
+            <p>If you build links by hand, the parameters are <code>m</code> (mapping), <code>o</code> (spelling text), <code>i</code> (IPA text), <code>from</code> (<code>o</code> or <code>i</code>, whichever was edited last), and <code>fold</code> (<code>1</code> or <code>0</code> for ignore-case). Anything you leave out falls back to the Tlag preset.</p>
+          </div>
+        </details>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="section-gold">
+    <div class="wrap">
+      <div class="meeting-strip">
+        <div style="text-align:center; width:100%;">
+          <h2 style="max-width:34ch; margin:0 auto 12px;">Romanized something nice?</h2>
+          <p style="max-width:46ch; margin:0 auto 22px;">Share your spelling system and favorite words with the club on Discord, or bring it to a Friday workshop.</p>
+          <a class="btn btn--small" href="https://discord.gg/PdkpT26AHG" target="_blank" rel="noopener">Join our Discord</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div data-include="footer">
+<footer class="site-footer site-footer--static">
+  <div class="wrap">
+    <p><strong style="color:#fff;">Conlang Club @ UCSD</strong><br><a href="https://conlangatucsd.com/">Home</a> · <a href="https://conlangatucsd.com/tlag/">Tlag</a> · <a href="https://conlangatucsd.com/about/">About</a> · <a href="https://conlangatucsd.com/officers/">Officers</a> · <a href="https://conlangatucsd.com/projects/">Projects</a> · <a href="https://conlangatucsd.com/tools/">Tools</a> · <a href="/">Orthography Converter</a> · <a href="https://word-generator.conlangatucsd.com/">Word Generator</a> · <a href="https://dictionary.conlangatucsd.com/">Dictionary Manager</a> · <a href="https://phonology.conlangatucsd.com/">Sound Change Applier</a> · <a href="https://conlangatucsd.com/faq/">FAQ</a> · <a href="https://discord.gg/PdkpT26AHG">Discord</a> · <a href="mailto:conlangclubatucsd@gmail.com">Email</a></p>
+    <p>&copy; <span data-year>2026</span> Conlang Club @ UCSD</p>
+  </div>
+</footer>
+</div>
+
+<script src="/script.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
